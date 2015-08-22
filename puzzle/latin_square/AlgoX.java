@@ -43,7 +43,11 @@ up a set of rows making up a solution as follows:
 
 import java.util.*;
 public class AlgoX {
+    private final int maxP; //max possibilities
+    private final int maxC; //max constraints
+    private boolean[] satisfiedC;
     private NODE root;
+    private NODE[] cols;
     private static class DATA {
         private int r, c, v;
         public DATA(int r, int c, int v)
@@ -90,6 +94,7 @@ public class AlgoX {
         }
 
     }
+
     
     public void insertLeft(NODE h, NODE p)
     {
@@ -115,28 +120,35 @@ public class AlgoX {
     }
 
     //linked list of constrains, and the total number of constraints
-    public AlgoX(LinkedList<DATA>[] list, int N)
+    public AlgoX(LinkedList<DATA>[] list, int p, int c)
     {
+        
+        maxP = p;
+        maxC = c;
+        satisfiedC = new boolean[maxC+1];
+
+        // create a root
         root = new NODE(0, 0);
-        NODE[] cols = new NODE[N];
+        cols = new NODE[maxC+1];
        
         NODE prev = root;
-        //Create a doubly linked list of the root + cols
-        for (int i = 1; i <=N; i++) {
-            cols[i-1] = new NODE(0, i);
-            insertLeft(root, cols[i-1]);
+        //create a doubly linked list of the cols, with root at the head
+        for (int i = 1; i <= maxC; i++) {
+            cols[i] = new NODE(0, i);
+            insertLeft(root, cols[i]);
+            satisfiedC[i] = false;
         }
 
         // Create a doubly linked list of each column elements
         // Create a doubly linked list of each row elements
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < maxP; i++) {
             boolean first = true;
             NODE l = null;
             for (DATA d:list[i]) {
                 NODE nd = new NODE(d.r, d.c, d.v);
 
-                insertTop(cols[d.c-1], nd);
-                cols[d.c-1].count += 1;
+                insertTop(cols[d.c], nd);
+                cols[d.c].count += 1;
                 if (!first)                             //insert into row
                     insertLeft(l, nd);
                 else 
@@ -147,15 +159,105 @@ public class AlgoX {
         }
     }
 
+    // if minIndex == 0 , solved
+    //             == -1, cannot be solved
+    //  otherwise carry on with work
+    public int minColumn()
+    {
+        int min = maxP;
+        int minIndex = 0;
+        for (int i = 1; i <= maxC; i++) {
+            if (!satisfiedC[i]) {
+                int cnt = cols[i].count;
+                if (cnt == 0)
+                    return -1;
+                if (cnt < min) {
+                    min = cnt;
+                    minIndex = i;
+                }
+            }
+        }
+        return minIndex;
+    }
+
+    public boolean solved()
+    {
+        return (root == root.right);
+    }
+
+
     public void print()
     {
         NODE r, c;
         for (r = root.right; r != root; r = r.right) {
             StdOut.println("======================");
             r.print();
+            StdOut.println("---------------");
             for (c = r.bottom; c != r; c = c.bottom) 
                 c.print();
         }
+    }
+
+    public void removeNode(NODE h)
+    {
+       //disconnect from column
+        NODE t, b;
+
+        t = h.top;
+        b = h.bottom;
+
+        t.bottom = h.bottom;
+        b.top    = h.top;
+    }
+
+
+    public void attachNode(NODE h)
+    {
+        NODE t, b;
+        t = h.top;
+        b = h.bottom;
+
+        t.bottom = h;
+        b.top    = h;
+
+    }
+
+    public void removeRow(NODE h)
+    {
+        NODE p;
+        for (p = h.right; p != h; p = p.right)
+            removeNode(p);
+        removeNode(p);
+    }
+
+    public void attachRow(NODE h)
+    {
+        NODE p;
+        for (p = h.right; p != h; p = p.right)
+            attachNode(p);
+        attachNode(p);
+    }
+
+
+    public void printSolution(Queue<Integer> q)
+    {
+    }
+
+
+    public void solve(Queue<Integer> q)
+    {
+        Stack<NODE> st = new Stack<>();
+        int mc = minColumn();
+        if (mc == -1)
+            return;
+
+        if (mc == 0)
+            printSolution();
+            return;
+
+         
+
+
     }
 
     public Queue<Integer> solve()
@@ -176,7 +278,7 @@ public class AlgoX {
                 list[i].add(new DATA(i+1, Integer.parseInt(s), 1));
             }
         }
-        AlgoX al = new AlgoX(list, N);
+        AlgoX al = new AlgoX(list, N, N);
         al.solve();
         al.print();
     }
