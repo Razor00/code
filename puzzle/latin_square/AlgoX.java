@@ -13,7 +13,6 @@ root-> COL1->COL2 -> COL3->....->COLN
  
        each COL also maintains the number of current elements
 
-
 “Algorithm X”
 
 We can find solution sets, if any exist, by a straightforward application of 
@@ -39,31 +38,30 @@ up a set of rows making up a solution as follows:
     column as a black cell in the chosen row.
 
 5.  Return to step 1.
-
-
-
- */
+*/
 
 
 import java.util.*;
 public class AlgoX {
-    NODE root;
-    public static class DATA {
-        int p;
-        int v;
-        public DATA(int p, int v)
+    private NODE root;
+    private static class DATA {
+        private int r, c, v;
+        public DATA(int r, int c, int v)
         {
-            this.p = p;
+            this.r = r;
+            this.c = c;
             this.v = v;
         }
     }
-    private class NODE {
-        NODE left, right;
-        NODE top, bottom;
-        int count, value;
+    private static class NODE {
+        private int row, col, value, count;
+        private NODE left, right;
+        private NODE top, bottom;
        
-        public void init(int v)
+        public void init(int r, int c, int v)
         {
+            row    = r;
+            col    = c;
             value  = v;
             count  = 0;
             left   = this;
@@ -72,65 +70,91 @@ public class AlgoX {
             bottom = this; 
         }
 
-        public NODE()
+        public NODE(int r, int c)
         {
-            init(0);
+            init(r, c, 0);
         }
    
-        public NODE(int v)
+        public NODE(int r, int c, int v)
         {
-            init(v);
+            init(r, c, v);
+        }
+        public void print()
+        {
+            if (value == 0)
+                StdOut.print("Col node:");
+            else
+                StdOut.print("Nor node:");
+
+            StdOut.println("(" + row + "," + col + " = " + value + "," + count + ")");
         }
 
     }
+    
+    public void insertLeft(NODE h, NODE p)
+    {
+        NODE last = h.left;
+       
+        last.right = p;
+        p.left     = last;
+
+        h.left     = p;
+        p.right    = h;
+    }
+
+
+    public void insertTop(NODE h, NODE p)
+    {
+        NODE last = h.top;
+        
+        last.bottom = p;
+        p.top       = last;
+
+        h.top       = p;
+        p.bottom    = h;
+    }
+
     //linked list of constrains, and the total number of constraints
     public AlgoX(LinkedList<DATA>[] list, int N)
     {
-        root = new NODE();
+        root = new NODE(0, 0);
         NODE[] cols = new NODE[N];
        
         NODE prev = root;
         //Create a doubly linked list of the root + cols
-        for (int i = 0; i < N; i++) {
-            cols[i] = new NODE();
-            cols[i].left  = prev;    cols[i].right  = root;
-            prev = cols[i];
+        for (int i = 1; i <=N; i++) {
+            cols[i-1] = new NODE(0, i);
+            insertLeft(root, cols[i-1]);
         }
+
         // Create a doubly linked list of each column elements
         // Create a doubly linked list of each row elements
         for (int i = 0; i < N; i++) {
             boolean first = true;
-            NODE l, r;
-            l = null;
+            NODE l = null;
             for (DATA d:list[i]) {
-                NODE nd = new NODE(d.v);
-                NODE c = cols[d.p];
-                NODE t = c.top;
-                t.bottom = nd; 
-                c.top    = nd;
-                nd.top     = t;
-                nd.bottom  = c;
-                    
-                //insert into row
-                if (!first) {
-                    NODE right; 
-                    r = l.right;
-                    l.right = nd;
-                    r.left = nd;
-                    nd.left = l;
-                    nd.right = r;
+                NODE nd = new NODE(d.r, d.c, d.v);
+
+                insertTop(cols[d.c-1], nd);
+                cols[d.c-1].count += 1;
+                if (!first)                             //insert into row
+                    insertLeft(l, nd);
+                else 
                     first = false;
-                }
+
                 l = nd;
             }
         }
     }
+
     public void print()
     {
-        NODE n = root->right;
-        while (n != root) {
-            NODE f = n->
-            for (i
+        NODE r, c;
+        for (r = root.right; r != root; r = r.right) {
+            StdOut.println("======================");
+            r.print();
+            for (c = r.bottom; c != r; c = c.bottom) 
+                c.print();
         }
     }
 
@@ -138,7 +162,7 @@ public class AlgoX {
     {
         Queue<Integer> q = new Queue<>();
         return q;
-    }
+	}
 
     public static void main(String[] args)
     {
@@ -149,12 +173,11 @@ public class AlgoX {
         for (int i = 0; i < N; i++) {
             list[i] = new LinkedList<DATA>();
             for (String s:StdIn.readLine().split("\\s+")) {
-                list[i].add(new DATA(Integer.parseInt(s), 1));
+                list[i].add(new DATA(i+1, Integer.parseInt(s), 1));
             }
-            for (DATA d:list[i])
-                StdOut.println(d.p + " " + d.v);
         }
         AlgoX al = new AlgoX(list, N);
         al.solve();
+        al.print();
     }
 }
