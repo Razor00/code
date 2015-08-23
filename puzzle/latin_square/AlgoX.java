@@ -180,8 +180,30 @@ public class AlgoX {
         return minIndex;
     }
 
+    public int getNextColumn(int curCol)
+    {
+        boolean done = false;
+        while (!done)  {
+            curCol = (curCol+1)%maxC;
+            if (curCol == 0)
+                curCol++;
 
-    public boolean solved()
+            for (NODE c = root.right; c != root; c = c.right) {
+                if (c.col >= curCol) {
+                    done = true;
+                    if (!satisfiedC[c.col] ) {
+                        if (cols[c.col].count == 0)
+                            return -1;
+                        return c.col;
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+
+
+    public boolean isSolved()
     {
         return (root == root.right);
     }
@@ -306,46 +328,44 @@ public class AlgoX {
         }
     }
 
-    public void solve(Stack<Integer> q)
+    public void solve(Stack<Integer> q, int mc)
     {
-        int mc = minColumn();
+        while ((mc = getNextColumn(mc)) != -1) { //No solution possible return
 
-        //No solution possible return
-        if (mc == -1) {
-            return;
-        }
+            if (mc == 0) {
+                printSolution(q);
+                return;
+            }
 
-        if (mc == 0) {
-            printSolution(q);
-            return;
-        }
+            assert(cols[mc].count > 0); 
 
-        assert(cols[mc].count > 0); 
+            for (NODE h = cols[mc].bottom; h != cols[mc]; h = h.bottom) {
 
-        for (NODE h = cols[mc].bottom; h != cols[mc]; h = h.bottom) {
-            
-            if (h.row == 0) continue;
-            
-            Stack<NODE> st = new Stack<>();
-            
-            q.push(h.row);
-            processRow(h, st);
-            
-            solve(q);
-            
-            restore(st);
-            q.pop();
-            
-            assert(st.isEmpty() == true);
+                if (h.row == 0) continue;
+
+                Stack<NODE> st = new Stack<>();
+        //        StdOut.println(">>>>>>>>>>>>processing row = " + h.row);
+       //         print();
+                q.push(h.row);
+                processRow(h, st);
+
+                solve(q, mc);
+
+                restore(st);
+                q.pop();
+
+                assert(st.isEmpty() == true);
+            }
+
         }
     }
 
     public Stack<Integer> solve()
     {
         Stack<Integer> q = new Stack<>();
-        solve(q);
+        solve(q, 0);
         return q;
-	}
+    }
 
     public static void main(String[] args)
     {

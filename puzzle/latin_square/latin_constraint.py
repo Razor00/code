@@ -42,19 +42,21 @@ class CONSTRAINT:
         return (v-1) * self.N + c
 
     def generate(self, r):
+        if len(r) > 0:
+
         print self.N * self.N * self.N, 3 * self.N * self.N
         tcell = c.total_cell_constraints()
         trow  = c.total_row_constraints()
         tcol  = c.total_col_constraints()
         ind = 0
         l = [i+1 for i in range(self.N)]
-        for k, i in enumerate(product(l , l, l)):
+        for k, v in enumerate(product(l , l, l)):
             if len(r) > 0:
                 if ind < len(r) and r[ind] == k+1:
-                    print i
+                    print v[0], "in", (v[1], v[2])
                     ind += 1
             else:
-                print c.cell_constraint(i), tcell + c.row_constraint(i), tcell + trow + c.col_constraint(i)
+                print c.cell_constraint(v), tcell + c.row_constraint(v), tcell + trow + c.col_constraint(v)
 
     def generate_constraint(self):
         self.generate([])
