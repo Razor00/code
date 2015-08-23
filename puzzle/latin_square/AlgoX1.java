@@ -162,6 +162,25 @@ public class AlgoX {
     // if minIndex == 0 , solved
     //             == -1, cannot be solved
     //  otherwise carry on with work
+    public int minColumn(int l)
+    {
+        int min = maxP;
+        int minIndex = 0;
+        for (int i = 1; i <= maxC; i++) {
+            if (!satisfiedC[i]) {
+                int cnt = cols[i].count;
+                if (cnt == 0)
+                    return -1;
+                if (cnt < min) {
+                    min = cnt;
+                    minIndex = i;
+                }
+            }
+        }
+        return minIndex;
+    }
+
+
     public int minColumn()
     {
         int min = maxP;
@@ -199,96 +218,135 @@ public class AlgoX {
         }
     }
 
-    //disconnect node from a column
     public void detachNode(NODE h)
     {
-        h.top.bottom = h.bottom;
-        h.bottom.top = h.top;
+       //disconnect from column
+        NODE t, b;
+
+        t = h.top;
+        b = h.bottom;
+
+        t.bottom = h.bottom;
+        b.top    = h.top;
         cols[h.col].count -= 1;
     }
 
-    //attach node to a column
+
     public void attachNode(NODE h)
     {
-        h.top.bottom = h;
-        h.bottom.top = h;
+        NODE t, b;
+        t = h.top;
+        b = h.bottom;
+
+        t.bottom = h;
+        b.top    = h;
+        
         cols[h.col].count += 1;
+
     }
 
-    public void detachRow(NODE h, Stack<NODE> st)
+    public void detachRow(NODE h)
     {
-        if (h.value == 0) return;
-        
-        st.push(h);
         NODE p;
-        for (p = h.right; p != h; p = p.right) 
+        //column node just return
+        if (h.value == 0)
+            return;
+         
+
+        //StdOut.println("Before Detaching Row  = " + h.row);
+        //print();
+        for (p = h.right; p != h; p = p.right) {
+//            StdOut.print("Detaching node  = ");
+//            p.print();
+//            StdIn.readInt();
             detachNode(p);
+//            print();
+        }
+//        StdOut.print("Detaching node  = ");
+//        p.print();
         detachNode(p);
+        StdOut.println("After Detaching Row  = " + h.row);
+        //print();
     }
 
     public void attachRow(NODE h)
     {
-        assert(h.value != 0);
         NODE p;
-        for (p = h.right; p != h; p = p.right) 
+        if (h.value == 0)
+            return;
+        //StdOut.println("Before attaching row node  = " + h.row);
+        //print();
+        for (p = h.right; p != h; p = p.right) {
+         //   StdOut.println("Attaching Row = ");
+         //   p.print();
             attachNode(p);
+         //   p.print();
+        }
+        //StdOut.println("Attaching Row = ");
+        //p.print();
         attachNode(p);
+        //StdOut.println("Before attaching row node  = " + h.row);
+        //p.print();
     }
 
     public void attachCol(NODE c)
     {
-        c.left.right = c;
-        c.right.left = c;
+        NODE l, r;
+
+        l = c.left;
+        r = c.right;
+        l.right = c;
+        r.left  = c;
     }
 
-    public void detachCol(NODE c, Stack<NODE> st)
+
+    public void detachCol(NODE c)
     {
-        st.push(c);
-        c.left.right = c.right;
-        c.right.left = c.left;
+        NODE l, r;
+
+        l = c.left;
+        r = c.right;
+        l.right = r;
+        r.left  = l;
+        StdOut.println(">>>>>>>>>>>>>>>>>>>Detaching column = " + c.col);
+//        print();
     }
 
-    public void printSolution(Stack<Integer> q)
+    public void printSolution(Queue<Integer> q)
     {
         StdOut.println("found solution");
         for (int i:q) 
             StdOut.print(i + " ");
+
         StdOut.println();
     }
 
 
-    /* Go through the elements of the column 
-     * and remove the rows of the elements
-     * c1 -> c2 -> c3 -> c4
-     * r1-----------------
-     * ------------r2-----
-     * ------r3-----------     
-     * r4-----------------
-     * r5-----------------
-     * while processing r1, have to remove r4, r5
-     *
-     * do not detach the main row here, as it will be done in a separate function
-     * but detach the corresponding column
-     */
-    public void processRowCols(NODE h, Stack<NODE> st)
+    public void processColRow(NODE h, Stack<NODE> st)
     {
         NODE p;
-        for (p = h.bottom; p != h; p = p.bottom) 
-            detachRow(p, st);
-        
-        detachCol(cols[h.col], st);
+        for (p = h.bottom; p != h; p = p.bottom) {
+            StdOut.println(">>>>>>>>>>>>>>>>>>Processing Row, Col = " + p.row + " " + p.col);
+            detachRow(p);
+            st.push(p);
+        }
+        st.push(cols[h.col]);
+        detachCol(cols[h.col]);
     }
 
     public void processRow(NODE h, Stack<NODE> st)
     {
+        //print(); 
         NODE p;
         for (p = h; p != h.left; p = p.right) {
             satisfiedC[p.col] = true;
-            processRowCols(p, st);
+            processColRow(p, st);
         }
-        satisfiedC[p.col] = true;
-        processRowCols(p, st);
-        detachRow(h, st);
+        processColRow(p, st);
+        st.push(h);
+        detachRow(h);
+        StdOut.println(">>>>>>>>>>>>>>>>>Finished Processing Row = " + h.row);
+        print(); 
     }
    
 
@@ -299,19 +357,18 @@ public class AlgoX {
             h = st.pop();
             if (h.value == 0)
                 attachCol(h);
-            else {
+            else
                 attachRow(h); 
-                satisfiedC[h.col] = false;
-            }
+            satisfiedC[h.col] = false;
         }
     }
 
-    public void solve(Stack<Integer> q)
+    public void solve(Queue<Integer> q)
     {
         int mc = minColumn();
-
-        //No solution possible return
+        StdOut.println("min column = >>>>>>>>>>>>>>>>>>>>>>>" + mc);
         if (mc == -1) {
+            StdOut.println("No solution possible returning  **************************");
             return;
         }
 
@@ -323,26 +380,26 @@ public class AlgoX {
         assert(cols[mc].count > 0); 
 
         for (NODE h = cols[mc].bottom; h != cols[mc]; h = h.bottom) {
-            
-            if (h.row == 0) continue;
-            
+            if (h.row == 0)
+                continue;
+            StdIn.readInt();
             Stack<NODE> st = new Stack<>();
-            
-            q.push(h.row);
+            StdOut.println("Selected row for processing = " + h.row);
+            q.enqueue(h.row);
             processRow(h, st);
-            
+         //   print();
             solve(q);
-            
             restore(st);
-            q.pop();
-            
+            StdOut.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>After restoring");
+        //    print();
+            q.dequeue();
             assert(st.isEmpty() == true);
         }
     }
 
-    public Stack<Integer> solve()
+    public Queue<Integer> solve()
     {
-        Stack<Integer> q = new Stack<>();
+        Queue<Integer> q = new Queue<>();
         solve(q);
         return q;
 	}
@@ -362,7 +419,6 @@ public class AlgoX {
             }
         }
         AlgoX al = new AlgoX(list, N, M);
-        //al.print();
         al.solve();
     }
 }
