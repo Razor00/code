@@ -14,10 +14,10 @@ class CONSTRAINT:
         return self.N
 
     def tldiag_constraints(self):
-        return 2*self.N - 1
+        return 2*self.N - 1 - 2
 
     def trdiag_constraints(self):
-        return 2*self.N - 1
+        return 2*self.N - 1 - 2
 
     # queen in a row
     # (1,  1), (1,  2), (1,  3) ... (1, N) = 1.. N
@@ -35,22 +35,22 @@ class CONSTRAINT:
     # this is just a observation
     def ldiag_constraint(self, d):
         (r, c) = d
-        return ((r + c) - 1)
+        return ((r + c) - 1) - 1
 
     # this is just a observation
     def rdiag_constraint(self, d):
         (r, c) = d
-        return (self.N - (r - c))
+        return (self.N - (r - c)) - 1
 
 
-    def generate(self, r):
-        trow  = c.trow_constraints()
-        tcol  = c.tcol_constraints()
-        tldiag = c.tldiag_constraints()
-        trdiag = c.trdiag_constraints()
+    def generate(self, d):
+        trow  = self.trow_constraints()
+        tcol  = self.tcol_constraints()
+        tldiag = self.tldiag_constraints()
+        trdiag = self.trdiag_constraints()
 
         display = False
-        if len(r) > 0:
+        if len(d) > 0:
             display = True
         else:
             print self.N * self.N, trow + tcol + tldiag + trdiag
@@ -59,12 +59,18 @@ class CONSTRAINT:
         ind = 0
         l = [i+1 for i in range(self.N)]
         for k, v in enumerate(product(l, l)):
+            r, c = v
             if display:
-                if ind < len(r) and r[ind] == k+1:
-                    print v[0], "in", (v[0], v[1])
+                if ind < len(d) and d[ind] == k+1:
+                    print r, "in", (r, c)
                     ind += 1
             else:
-                print c.row_constraint(v), trow + c.col_constraint(v), trow + tcol + c.rdiag_constraint(v), trow + tcol + trdiag + c.ldiag_constraint(v)
+                if (r == N and c == 1) or (r == 1 and c == N):  # dont print rdiag
+                    print self.row_constraint(v), trow + self.col_constraint(v), trow + tcol + trdiag + self.ldiag_constraint(v)
+                elif (r == 1 and c == 1) or (r == N and c == N): # dont print ldiag
+                    print self.row_constraint(v), trow + self.col_constraint(v), trow + tcol + self.rdiag_constraint(v)
+                else:
+                    print self.row_constraint(v), trow + self.col_constraint(v), trow + tcol + self.rdiag_constraint(v), trow + tcol + trdiag + self.ldiag_constraint(v)
 
     def generate_constraint(self):
         self.generate([])
