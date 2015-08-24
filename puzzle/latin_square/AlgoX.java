@@ -162,6 +162,7 @@ public class AlgoX {
     // if minIndex == 0 , solved
     //             == -1, cannot be solved
     //  otherwise carry on with work
+/*
     public int minColumn()
     {
         int min = maxP;
@@ -179,35 +180,50 @@ public class AlgoX {
         }
         return minIndex;
     }
-
+*/
     public int getNextColumn(int curCol)
     {
-        boolean done = false;
-        while (!done)  {
-            curCol = (curCol+1)%maxC;
-            if (curCol == 0)
-                curCol++;
-
-            for (NODE c = root.right; c != root; c = c.right) {
-                if (c.col >= curCol) {
-                    done = true;
-                    if (!satisfiedC[c.col] ) {
-                        if (cols[c.col].count == 0)
-                            return -1;
-                        return c.col;
-                    }
-                }
+        for (NODE c = root.right; c != root; c = c.right) {
+            if (c.col != curCol && !satisfiedC[c.col] ) {
+                if (cols[c.col].count == 0)
+                    return -1;
+                return c.col;
             }
         }
         return 0;
     }
+    /*
+       public int getNextColumn(int curCol)
+       {
+       boolean done = false;
+       while (!done)  {
+       for (NODE c = root.right; c != root; c = c.right) {
+       if (!satisfiedC[c.col] ) {
+       if (cols[c.col].count == 0)
+       return -1;
+       return c.col;
+       }
+       }
+       }
+       }
+       return 0;
+}
 
-
+*/
     public boolean isSolved()
     {
         return (root == root.right);
     }
 
+    public boolean isColNode(NODE h)
+    {
+        return (h.value == 0);
+    }
+
+    public boolean isRootNode(NODE h)
+    {
+        return (h.row == 0);
+    }
 
     public void print()
     {
@@ -239,7 +255,8 @@ public class AlgoX {
 
     public void detachRow(NODE h, Stack<NODE> st)
     {
-        if (h.value == 0) return;
+        if (isColNode(h))
+            return;
         
         st.push(h);
         NODE p;
@@ -250,7 +267,8 @@ public class AlgoX {
 
     public void attachRow(NODE h)
     {
-        assert(h.value != 0);
+        assert(!isColNode(h));
+
         NODE p;
         for (p = h.right; p != h; p = p.right) 
             attachNode(p);
@@ -319,7 +337,7 @@ public class AlgoX {
         NODE h;
         while (!st.isEmpty())  {
             h = st.pop();
-            if (h.value == 0)
+            if (isColNode(h))
                 attachCol(h);
             else {
                 attachRow(h); 
@@ -328,58 +346,57 @@ public class AlgoX {
         }
     }
 
-    public void solve(Stack<Integer> q, int mc)
+    public void solve(Stack<Integer> q)
     {
-        while ((mc = getNextColumn(mc)) != -1) { //No solution possible return
+        for (NODE c = root.right; c != root; c = c.right) {
+            if (!satisfiedC[c.col]) {
+                if (c.count == 0) // Unfeasible solution
+                    return;
 
-            if (mc == 0) {
-                printSolution(q);
-                return;
+                assert(c.count > 0); 
+
+                for (NODE h = c.bottom; h != c; h = h.bottom) {
+
+                    if (isRootNode(h)) 
+                        continue;
+
+                    Stack<NODE> st = new Stack<>();
+                    q.push(h.row);
+                    processRow(h, st);
+
+                    solve(q);
+
+                    restore(st);
+                    q.pop();
+                    assert(st.isEmpty() == true);
+                }
+
             }
-
-            assert(cols[mc].count > 0); 
-
-            for (NODE h = cols[mc].bottom; h != cols[mc]; h = h.bottom) {
-
-                if (h.row == 0) continue;
-
-                Stack<NODE> st = new Stack<>();
-        //        StdOut.println(">>>>>>>>>>>>processing row = " + h.row);
-       //         print();
-                q.push(h.row);
-                processRow(h, st);
-
-                solve(q, mc);
-
-                restore(st);
-                q.pop();
-
-                assert(st.isEmpty() == true);
-            }
-
         }
+        if (isSolved())
+            printSolution(q);
     }
 
-    public Stack<Integer> solve()
-    {
-        Stack<Integer> q = new Stack<>();
-        solve(q, 0);
-        return q;
-    }
+public Stack<Integer> solve()
+{
+    Stack<Integer> q = new Stack<>();
+    solve(q);
+    return q;
+}
 
-    public static void main(String[] args)
-    {
-        In in = new In(args[0]);
-        String[] q = in.readLine().split("\\s+"); //StdIn.readLine().split("\\s+");
-        int N = Integer.parseInt(q[0]);
-        int M = Integer.parseInt(q[1]);
-        LinkedList<DATA>[] list = new LinkedList[N+1];
-        
-        for (int i = 1; i <= N; i++) {
-            list[i] = new LinkedList<DATA>();
-            for (String s:in.readLine().split("\\s+")) { //StdIn.readLine().split("\\s+")) {
-                list[i].addFirst(new DATA(i, Integer.parseInt(s), 1));
-            }
+public static void main(String[] args)
+{
+    In in = new In(args[0]);
+    String[] q = in.readLine().split("\\s+"); //StdIn.readLine().split("\\s+");
+    int N = Integer.parseInt(q[0]);
+    int M = Integer.parseInt(q[1]);
+    LinkedList<DATA>[] list = new LinkedList[N+1];
+
+    for (int i = 1; i <= N; i++) {
+        list[i] = new LinkedList<DATA>();
+        for (String s:in.readLine().split("\\s+")) { //StdIn.readLine().split("\\s+")) {
+            list[i].addFirst(new DATA(i, Integer.parseInt(s), 1));
+        }
         }
         AlgoX al = new AlgoX(list, N, M);
         //al.print();
