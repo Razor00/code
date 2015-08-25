@@ -42,16 +42,19 @@ class CONSTRAINT:
         return (v-1) * self.N + c
 
     def generate(self, r):
+        display = False
         if len(r) > 0:
+            display = True
+        else:
+            print self.N * self.N * self.N, 3 * self.N * self.N
 
-        print self.N * self.N * self.N, 3 * self.N * self.N
         tcell = c.total_cell_constraints()
         trow  = c.total_row_constraints()
         tcol  = c.total_col_constraints()
         ind = 0
         l = [i+1 for i in range(self.N)]
         for k, v in enumerate(product(l , l, l)):
-            if len(r) > 0:
+            if display:
                 if ind < len(r) and r[ind] == k+1:
                     print v[0], "in", (v[1], v[2])
                     ind += 1
@@ -63,7 +66,6 @@ class CONSTRAINT:
 
     def interpret_result(self, l):
         l.sort()
-        print l
         self.generate(l)
 
 N = int(raw_input())

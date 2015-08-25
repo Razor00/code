@@ -44,6 +44,7 @@ up a set of rows making up a solution as follows:
 import java.util.*;
 public class AlgoX {
     private final int maxP; //max possibilities
+    private final int priC; //primary constraints
     private final int maxC; //max constraints
     private boolean[] satisfiedC;
     private NODE root;
@@ -120,17 +121,18 @@ public class AlgoX {
     }
 
     //linked list of constrains, and the total number of constraints
-    public AlgoX(LinkedList<DATA>[] list, int p, int c)
+    public AlgoX(LinkedList<DATA>[] list, int possibilities, int constraints, int primary_constraints)
     {
         
-        maxP = p;
-        maxC = c;
-        satisfiedC = new boolean[maxC+1];
+        maxP = possibilities;
+        maxC = constraints;
+        priC = primary_constraints;
 
         // create a root
         root = new NODE(0, 0);
         cols = new NODE[maxC+1];
-       
+        satisfiedC = new boolean[maxC+1];
+
         NODE prev = root;
         //create a doubly linked list of the cols, with root at the head
         for (int i = 1; i <= maxC; i++) {
@@ -139,6 +141,15 @@ public class AlgoX {
             satisfiedC[i] = false;
         }
 
+        NODE rt = cols[priC].right;
+        NODE lt = root.left;
+
+        //disconnect primary constrains from rest
+        cols[priC].right = root;
+        root.left = cols[priC];
+
+        rt.left  = lt;
+        lt.right = rt;
         // Create a doubly linked list of each column elements
         // Create a doubly linked list of each row elements
         for (int i = 1; i <= maxP; i++) {
@@ -290,7 +301,7 @@ public class AlgoX {
 
     public void printSolution(Stack<Integer> q)
     {
-        StdOut.println("found solution");
+        //StdOut.println("found solution");
         for (int i:q) 
             StdOut.print(i + " ");
         StdOut.println();
@@ -370,35 +381,45 @@ public class AlgoX {
                     q.pop();
                     assert(st.isEmpty() == true);
                 }
-
             }
         }
         if (isSolved())
             printSolution(q);
     }
 
-public Stack<Integer> solve()
-{
-    Stack<Integer> q = new Stack<>();
-    solve(q);
-    return q;
-}
+    public Stack<Integer> solve()
+    {
+        Stack<Integer> q = new Stack<>();
+        solve(q);
+        return q;
+    }
 
-public static void main(String[] args)
-{
-    In in = new In(args[0]);
-    String[] q = in.readLine().split("\\s+"); //StdIn.readLine().split("\\s+");
-    int N = Integer.parseInt(q[0]);
-    int M = Integer.parseInt(q[1]);
-    LinkedList<DATA>[] list = new LinkedList[N+1];
+    public static void main(String[] args)
+    {
+        In in = new In(args[0]);
 
-    for (int i = 1; i <= N; i++) {
-        list[i] = new LinkedList<DATA>();
-        for (String s:in.readLine().split("\\s+")) { //StdIn.readLine().split("\\s+")) {
-            list[i].addFirst(new DATA(i, Integer.parseInt(s), 1));
+        String[] q = in.readLine().split("\\s+"); //StdIn.readLine().split("\\s+");
+        int possibilities       = Integer.parseInt(q[0]); // total possibilities
+        int constraints         = Integer.parseInt(q[1]); // primary constraints
+        int primary_constraints = Integer.parseInt(q[2]); // total constraints
+
+        if (primary_constraints > constraints) {
+            StdOut.println("primary constraints greater than total constraints");
+            return;
         }
+        //StdOut.println("possibilites        = " + possibilities);
+        //StdOut.println("constraints         = " + constraints);
+        //StdOut.println("primary constraints = " + primary_constraints);
+
+        LinkedList<DATA>[] list = new LinkedList[possibilities+1];
+
+        for (int i = 1; i <= possibilities; i++) {
+            list[i] = new LinkedList<DATA>();
+            for (String s:in.readLine().split("\\s+")) { //StdIn.readLine().split("\\s+")) {
+                list[i].addFirst(new DATA(i, Integer.parseInt(s), 1));
+            }
         }
-        AlgoX al = new AlgoX(list, N, M);
+        AlgoX al = new AlgoX(list, possibilities, constraints, primary_constraints);
         //al.print();
         al.solve();
     }
