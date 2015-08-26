@@ -37,8 +37,8 @@ class CONSTRAINT:
 
     def box_constraint(self, d):
         (r, c, v) = d
-        brow  = math.ceil(r/self.boxN)
-        bcol  = math.ceil(c/self.boxN)
+        brow  = math.ceil(r*1.0/self.boxN)
+        bcol  = math.ceil(c*1.0/self.boxN)
         bnum  = self.boxN * (brow - 1) + bcol
         return int(self.boxS * (bnum - 1) + v)
 
@@ -46,7 +46,7 @@ class CONSTRAINT:
         return self.N * self.N * self.N
 
     def total_constraints(self):
-        return    self.tcell_constraints() + self.trow_constraints() + self.tcol_constraints() + self.tbox_constraints()
+        return self.tcell_constraints() + self.trow_constraints() + self.tcol_constraints() + self.tbox_constraints()
 
     def generate(self, d, result):
 
@@ -91,26 +91,55 @@ class CONSTRAINT:
         else:
             print ("InValid solution")
 
-    def check_rc(self, l, pos):
+    def check_list(self, l):
         for i in range(1, self.N+1):
-            if l[pos].count(i) != 1:
-                print(l[pos])
+            if l.count(i) != 1:
                 return False
+
         return True
-    
+
+    def check_row(self, l, pos):
+        return self.check_list(l[pos])
+
+    def check_col(self, l, pos):
+        return self.check_list(l[pos])
+
+    def check_box(self, l):
+        return self.check_list(l)
+
+
     def check(self, result):
            
-        s = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
         r = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
+        c = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
         k = 0
         for i in range(1, self.N+1):
             for j in range(1, self.N+1):
-                s[j][i] = r[i][j] = result[k][2]
+                c[j][i] = r[i][j] = result[k][2]
                 k += 1
 
         
         for i in range(1, self.N+1):
-            if not (self.check_rc(r, i) and self.check_rc(s, i)):
+            if not (self.check_row(r, i) and self.check_col(c, i)):
+                return False
+        # check box constraints
+        # generate boxes sqrt(N) by sqrt(N) of N boxes
+        # box (i, j): start row, start col
+        br = 1
+        bc = 1
+        bsize = int(math.sqrt(self.N))
+        for bnum in range(1, self.N+1):
+            br = int(math.ceil(bnum*1.0/bsize)) 
+            bc = bnum - (br-1) * bsize
+            ar  = (br-1) * bsize + 1
+            ac  = (bc-1) * bsize + 1
+            l = [0] * self.N
+            p = 0
+            for i in range(bsize):
+                for j  in range(bsize):
+                    l[p] = r[ar + i][ac+j] 
+                    p += 1
+            if not self.check_box(l):
                 return False
         return True
 
