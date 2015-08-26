@@ -8,8 +8,9 @@ import math
 class CONSTRAINT:
     def __init__(self, N):
         self.N = N
-        self.boxN = math.sqrt(N)
+        self.boxN = int(math.sqrt(N))
         self.boxS = N
+        self.psols = []
   
     def tcell_constraints(self):
         return self.N * self.N
@@ -22,6 +23,9 @@ class CONSTRAINT:
 
     def tbox_constraints(self):
         return self.N * self.N
+
+    def partial_solutions(self):
+        return len(self.psols)
 
     def cell_constraint(self, d):
         (r, c, v) = d
@@ -46,7 +50,11 @@ class CONSTRAINT:
         return self.N * self.N * self.N
 
     def total_constraints(self):
-        return self.tcell_constraints() + self.trow_constraints() + self.tcol_constraints() + self.tbox_constraints()
+        return (self.tcell_constraints() +
+                self.trow_constraints() + 
+                self.tcol_constraints() + 
+                self.tbox_constraints())
+
 
     def generate(self, d, result):
 
@@ -59,7 +67,10 @@ class CONSTRAINT:
         if len(d) > 0:
             display = True
         else:
-            print (self.possibilities(), self.total_constraints(), self.total_constraints())
+            print  (self.possibilities(), 
+                    self.total_constraints(), 
+                    self.total_constraints(), 
+                    self.partial_solutions())
 
 
         ind = 0
@@ -72,12 +83,14 @@ class CONSTRAINT:
                     result.append(t)
                     ind += 1
             else:
-                    print(self.cell_constraint(t),  
-                    tcell + self.row_constraint(t), 
-                    tcell + trow  + self.col_constraint(t),
-                    tcell + trow  + tcol +  self.box_constraint(t))
+                    print  (self.cell_constraint(t),  
+                            tcell + self.row_constraint(t), 
+                            tcell + trow  + self.col_constraint(t),
+                            tcell + trow  + tcol +  self.box_constraint(t))
 
-    
+        for p in self.psols:
+            print(p)
+
     def generate_constraint(self):
         self.generate([], [])
 
@@ -156,6 +169,11 @@ class CONSTRAINT:
         print("+----" * self.N, end = '')
         print("+")
 
+    def process(self, inp):
+        for i,v in enumerate(inp):
+            if v != 0:
+                self.psols.append((i*self.N)+v)
+
 
 N = int(raw_input("Enter the size of grid in N: "))
 
@@ -175,4 +193,13 @@ if inp == "yes":
         else:
             break
 else:
+    inp = raw_input("Do you want to provide the input: ")
+    if inp == "yes":
+        print ("Enter the grid elements in NxN matrix with 0 for blanks")    
+        l=[]
+        for i in range(N):
+            for e in map(int, raw_input().strip().split()):
+                l.append(e)
+        c.process(l)
+    
     c.generate_constraint()

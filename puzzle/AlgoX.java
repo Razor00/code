@@ -156,7 +156,8 @@ public class AlgoX {
 
         //temporary storage to store the head of row, for preprocessing with partialSolutions
         NODE[] trows = new NODE[partialN];
-
+        boolean psolution = partialN > 0;
+        
         // Create a doubly linked list of each column elements
         // Create a doubly linked list of each row elements
         for (int i = 1, j = 0; i <= maxP; i++) {
@@ -177,12 +178,14 @@ public class AlgoX {
                 l = nd;
             }
             // j can be zero and partialSols would be invalid, for full solvers
-            if (j > 0 && partialSols[j] == i) {
-                trows[j]  = l;
-                j++;
+            if (psolution) {
+                if (partialSols[j] == i) 
+                    trows[j++]  = l;
+                if (j == partialN)
+                    psolution = false;
             }
+            
         }
-
         sols = new Stack<>();
         NODE n;
         for (int i = 0; i < partialN; i++) {
