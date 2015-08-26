@@ -46,7 +46,7 @@ class CONSTRAINT:
         return self.N * self.N * self.N
 
     def total_constraints(self):
-        return self.tcell_constraints() + self.trow_constraints() + self.tcell_constraints() + self.tbox_constraints()
+        return    self.tcell_constraints() + self.trow_constraints() + self.tcol_constraints() + self.tbox_constraints()
 
     def generate(self, d, result):
 
@@ -85,24 +85,56 @@ class CONSTRAINT:
         result = []
         l.sort()
         self.generate(l, result)
-        self.draw(result)
+        if self.check(result):
+            print ("Valid solution")
+            self.draw(result)
+        else:
+            print ("InValid solution")
 
+    def check_rc(self, l, pos):
+        for i in range(1, self.N+1):
+            if l[pos].count(i) != 1:
+                print(l[pos])
+                return False
+        return True
+    
+    def check(self, result):
+           
+        s = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
+        r = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
+        k = 0
+        for i in range(1, self.N+1):
+            for j in range(1, self.N+1):
+                s[j][i] = r[i][j] = result[k][2]
+                k += 1
+
+        
+        for i in range(1, self.N+1):
+            if not (self.check_rc(r, i) and self.check_rc(s, i)):
+                return False
+        return True
 
     def draw(self, result):
         sorted(result, key = lambda x : (x[0], -x[1])) 
         k = 0
         for i in range(1, self.N+1):        
-            print ("+---" * self.N, end = '')
+            print ("+----" * self.N, end = '')
             print("+")
             for j in range(1, self.N+1):
-                print("| %d " % result[k][2], end= '') 
+                print("| %2d " % result[k][2], end= '') 
                 k += 1
             print("|")
-        print("+---" * self.N, end = '')
+        print("+----" * self.N, end = '')
         print("+")
 
 
 N = int(raw_input("Enter the size of grid in N: "))
+
+sN = math.sqrt(N)
+if sN * sN != N:
+    print ("N is not a square number")
+    exit(0)
+
 c = CONSTRAINT(N)
 
 inp = raw_input("Want to interpret results?")

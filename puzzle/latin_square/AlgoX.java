@@ -173,7 +173,6 @@ public class AlgoX {
     // if minIndex == 0 , solved
     //             == -1, cannot be solved
     //  otherwise carry on with work
-/*
     public int minColumn()
     {
         int min = maxP;
@@ -191,7 +190,6 @@ public class AlgoX {
         }
         return minIndex;
     }
-*/
     public int getNextColumn(int curCol)
     {
         for (NODE c = root.right; c != root; c = c.right) {
@@ -316,7 +314,7 @@ public class AlgoX {
      * ------r3-----------     
      * r4-----------------
      * r5-----------------
-     * while processing r1, have to remove r4, r5
+     * while processing c1 and selecting r1, have to remove r4, r5
      *
      * do not detach the main row here, as it will be done in a separate function
      * but detach the corresponding column
@@ -343,7 +341,7 @@ public class AlgoX {
     }
    
 
-    public void restore(Stack<NODE> st)
+    public void deprocessRow(Stack<NODE> st)
     {
         NODE h;
         while (!st.isEmpty())  {
@@ -356,7 +354,33 @@ public class AlgoX {
             }
         }
     }
+    
+    public void solve(Stack<Integer> q)
+    {
+        int mc = minColumn(); 
+        if (mc == -1) return;
+        if (mc == 0)  { 
+            printSolution(q);
+            return;
+        }
+        NODE c = cols[mc];
+        assert(c.count > 0); 
+        for (NODE h = c.bottom; h != c; h = h.bottom) {
+            if (isColNode(h)) 
+                continue;
 
+            Stack<NODE> st = new Stack<>();
+            q.push(h.row);
+            processRow(h, st);
+
+            solve(q);
+
+            deprocessRow(st);
+            q.pop();
+            assert(st.isEmpty() == true);
+        }
+    }
+/*
     public void solve(Stack<Integer> q)
     {
         for (NODE c = root.right; c != root; c = c.right) {
@@ -386,7 +410,7 @@ public class AlgoX {
         if (isSolved())
             printSolution(q);
     }
-
+*/
     public Stack<Integer> solve()
     {
         Stack<Integer> q = new Stack<>();
