@@ -3,6 +3,10 @@
 from __future__ import print_function
 from itertools import *
 import math
+import os, sys, subprocess, signal
+
+def signal_handler(signal, frame):
+    sys.exit(0)
 
 #data is like (value, row, col)
 class CONSTRAINT:
@@ -76,10 +80,10 @@ class CONSTRAINT:
         ind = 0
         l = [i+1 for i in range(self.N)]
         for k, t  in enumerate(product(l, l, l)):
-            r, c, v = t
+            (r, c, v) = t
             if display:
                 if ind < len(d) and d[ind] == k+1:
-                    print (v, "in", (r, c))
+                    #print (v, "in", (r, c))
                     result.append(t)
                     ind += 1
             else:
@@ -87,29 +91,12 @@ class CONSTRAINT:
                             tcell + self.row_constraint(t), 
                             tcell + trow  + self.col_constraint(t),
                             tcell + trow  + tcol +  self.box_constraint(t))
-
-        for p in self.psols:
-            print(p)
+        if not display:
+            for p in self.psols:
+                print(p)
 
     def generate_constraint(self):
         self.generate([], [])
-
-    def interpret_result(self, l):
-        result = []
-        l.sort()
-        self.generate(l, result)
-        if self.check(result):
-            print ("Valid solution")
-            self.draw(result)
-        else:
-            print ("InValid solution")
-
-    def check_list(self, l):
-        for i in range(1, self.N+1):
-            if l.count(i) != 1:
-                return False
-
-        return True
 
     def check_row(self, l, pos):
         return self.check_list(l[pos])
@@ -174,7 +161,27 @@ class CONSTRAINT:
             if v != 0:
                 self.psols.append((i*self.N)+v)
 
+    def reset(self):
+        self.psols = []
 
+    def interpret_result(self, l):
+        result = []
+        l.sort()
+        self.generate(l, result)
+        if self.check(result):
+            print ("Valid solution")
+            self.draw(result)
+        else:
+            print ("InValid solution")
+
+    def check_list(self, l):
+        for i in range(1, self.N+1):
+            if l.count(i) != 1:
+                return False
+
+        return True
+
+signal.signal(signal.SIGINT, signal_handler)
 N = int(raw_input("Enter the size of grid in N: "))
 
 sN = math.sqrt(N)
@@ -193,13 +200,47 @@ if inp == "yes":
         else:
             break
 else:
-    inp = raw_input("Do you want to provide the input: ")
+    inp = raw_input("Continuous input: ")
+    continuous_inp = False
     if inp == "yes":
-        print ("Enter the grid elements in NxN matrix with 0 for blanks")    
-        l=[]
-        for i in range(N):
-            for e in map(int, raw_input().strip().split()):
-                l.append(e)
-        c.process(l)
-    
-    c.generate_constraint()
+        continuous_inp = True
+
+    rescount = 1
+    while True:
+        c.reset()
+        if not continuous_inp:
+            inp = raw_input("Do you want to provide the input:(Ctrl+c to exit) ")
+        else:
+            inp = "stdin"
+
+        if inp == "stdin":
+            print ("Enter the grid elements in NxN matrix with 0 for blanks")    
+            l=[]
+            for i in range(N):
+                for e in map(int, raw_input().strip().split()):
+                    l.append(e)
+            c.process(l)
+
+        ifile = "/tmp/sudoku_" + str(N) + ".txt" 
+        old = sys.stdout
+        sys.stdout = open(ifile, "w")
+        c.generate_constraint()
+        sys.stdout.close()
+        sys.stdout = old
+        
+        cmd   = ["java-algs4",  "AlgoX", ifile]
+        print("Executing command " + str(cmd))
+
+        try:
+            result = subprocess.check_output(cmd)
+            for i in result.splitlines():
+                print ("Result = ", rescount) 
+                c.interpret_result(map(int, [j for j in i.split()])) 
+
+                if not continuous_inp:
+                    raw_input("Press enter")
+                rescount += 1
+
+        except subprocess.CalledProcessError as e:
+            print ("Execution command failed:", e)
+        
