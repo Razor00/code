@@ -109,7 +109,6 @@ class CONSTRAINT:
 
 
     def check(self, result):
-           
         r = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
         c = [[0 for i in range(self.N+1)] for j in range(self.N+1)] 
         k = 0
@@ -143,6 +142,9 @@ class CONSTRAINT:
                 return False
         return True
 
+    def output(self, result):
+        return [k for i,j,k in result]
+                    
     def draw(self, result):
         sorted(result, key = lambda x : (x[0], -x[1])) 
         k = 0
@@ -164,13 +166,17 @@ class CONSTRAINT:
     def reset(self):
         self.psols = []
 
-    def interpret_result(self, l):
+    def generate_result(self, l, ret_list = False):
         result = []
         l.sort()
         self.generate(l, result)
         if self.check(result):
             print ("Valid solution")
-            self.draw(result)
+            if ret_list:
+                return self.output(result)
+            else:
+                self.draw(result)
+
         else:
             print ("InValid solution")
 
@@ -181,66 +187,90 @@ class CONSTRAINT:
 
         return True
 
-signal.signal(signal.SIGINT, signal_handler)
-N = int(raw_input("Enter the size of grid in N: "))
 
-sN = math.sqrt(N)
-if sN * sN != N:
-    print ("N is not a square number")
-    exit(0)
-
-c = CONSTRAINT(N)
-
-inp = raw_input("Want to interpret results?")
-if inp == "yes":
+def interpret_results(c):
     while True:
         l = map(int, raw_input("enter the result: ").strip().split())
-        if len(l) != 0:
-            c.interpret_result(l)
-        else:
-            break
-else:
-    inp = raw_input("Continuous input: ")
-    continuous_inp = False
-    if inp == "yes":
-        continuous_inp = True
+        if len(l) == 0:
+            break;
+        c.generate_result(l)
 
+def execute_n_interpret(c, inp_list, ask, ret_list = False):
     rescount = 1
-    while True:
+    if inp_list:
+        c.process(inp_list)
+
+    ifile = "/tmp/sudoku_" + str(c.N) + ".txt" 
+    old = sys.stdout
+    sys.stdout = open(ifile, "w")
+
+    c.generate_constraint()
+    
+    sys.stdout.close()
+    sys.stdout = old
+    
+    cmd = ["java-algs4", "AlgoX", ifile]
+    print("Executing command " + str(cmd))
+
+    try:
+        result = subprocess.check_output(cmd)
+        for i in result.splitlines():
+            print ("Result = ", rescount) 
+            out = c.generate_result(map(int, [j for j in i.split()]), ret_list) 
+
+            if ask:
+                raw_input("Press enter")
+            rescount += 1
+
+    except subprocess.CalledProcessError as e:
+        print ("Execution command failed:", e)
+
+    return out
+
+
+def default_input(c):
+    c.reset()
+    execute_n_interpret(c, None, True) 
+
+def continuous_input(c):
+    count = int(raw_input("Enter total inps"))
+    for i in range(count):
         c.reset()
-        if not continuous_inp:
-            inp = raw_input("Do you want to provide the input:(Ctrl+c to exit) ")
+        print ("Enter the grid elements in NxN matrix with 0 for blanks")    
+        l=[]
+        for i in range(c.N):
+            for e in map(int, raw_input().strip().split()):
+                l.append(e)
+    
+        execute_n_interpret(c, l, False)
+ 
+
+
+def register_handler():
+    signal.signal(signal.SIGINT, signal_handler)
+
+
+def check_valid(N):
+    sN = math.sqrt(N)
+    if sN * sN != N:
+        print ("N is not a square number")
+        exit(0)
+
+
+if __name__ == '__main__':
+    register_handler()
+
+    N = int(raw_input("Enter the size of grid in N: "))
+    check_valid(N)
+
+    c = CONSTRAINT(N)
+
+    inp = raw_input("Want to interpret results?")
+    if inp == "yes":
+        interpret_results(c)
+    else:
+        inp = raw_input("Continuous input: ")
+        if inp == "yes":
+            continuous_input(c)
         else:
-            inp = "stdin"
-
-        if inp == "stdin":
-            print ("Enter the grid elements in NxN matrix with 0 for blanks")    
-            l=[]
-            for i in range(N):
-                for e in map(int, raw_input().strip().split()):
-                    l.append(e)
-            c.process(l)
-
-        ifile = "/tmp/sudoku_" + str(N) + ".txt" 
-        old = sys.stdout
-        sys.stdout = open(ifile, "w")
-        c.generate_constraint()
-        sys.stdout.close()
-        sys.stdout = old
-        
-        cmd   = ["java-algs4",  "AlgoX", ifile]
-        print("Executing command " + str(cmd))
-
-        try:
-            result = subprocess.check_output(cmd)
-            for i in result.splitlines():
-                print ("Result = ", rescount) 
-                c.interpret_result(map(int, [j for j in i.split()])) 
-
-                if not continuous_inp:
-                    raw_input("Press enter")
-                rescount += 1
-
-        except subprocess.CalledProcessError as e:
-            print ("Execution command failed:", e)
-        
+            default_input(c)
