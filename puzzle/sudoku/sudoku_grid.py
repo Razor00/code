@@ -187,15 +187,30 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
         self.ensureVisible(0, 0, 800, 800)
 
 
-N = map(int, raw_input("Please enter the grid dimension: ").strip().split())[0]
-if N <= 0:
-    print ("Sudoku needs a positive grid number")
-    sys.exit(0)
+while True:
+    s = raw_input("Please enter the grid dimension: ")
+    if not s:
+        continue
 
-p = math.sqrt(N)
-if p * p != N:
-    print (str(N) + " is not a square")
-    sys.exit(0)
+    inp = s.strip().split()
+    if len(inp) == 0:
+        continue
+    
+    try:
+        N = int(inp[0])
+    except  ValueError:
+        print("Please enter a positive Integer square")
+        continue
+
+    if N <= 0:
+        print ("Sudoku needs a positive Integer Square number")
+        continue
+
+    p = int(math.sqrt(N))
+    if p * p == N:
+        break
+    else:
+        print (str(N) + " is not a square")
 
 a = QApplication(sys.argv)
 grid = SUDOKU_GRID(N, sys.argv[0])
