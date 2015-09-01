@@ -10,11 +10,15 @@ def signal_handler(signal, frame):
 
 #data is like (value, row, col)
 class CONSTRAINT:
-    def __init__(self, N):
+    def __init__(self, N, path):
         self.N = N
         self.boxN = int(math.sqrt(N))
         self.boxS = N
         self.psols = []
+        check = path.split("/")
+        if path[0] != "/":
+            path = os.getcwd() + "/" + path
+        self.path = "/".join(path.split("/")[:-1])
   
     def tcell_constraints(self):
         return self.N * self.N
@@ -208,15 +212,19 @@ def execute_n_interpret(c, inp_list, ask, ret_list = False):
     
     sys.stdout.close()
     sys.stdout = old
-    
-    cmd = ["java-algs4", "AlgoX", ifile]
+  
+    classpath = c.path + ":" + c.path + "/../"
+    libpath   = c.path + "/../../lib/algs4.jar" + ":" + c.path + "/../../lib/stdlib.jar" 
+    print(classpath)
+    cmd = ["java", "-cp", classpath + ":" + libpath, "AlgoX", ifile]
     print("Executing command " + str(cmd))
 
     try:
         result = subprocess.check_output(cmd)
+        out = []
         for i in result.splitlines():
             print ("Result = ", rescount) 
-            out = c.generate_result(map(int, [j for j in i.split()]), ret_list) 
+            out.append(c.generate_result(map(int, [j for j in i.split()]), ret_list))
 
             if ask:
                 raw_input("Press enter")
@@ -263,7 +271,7 @@ if __name__ == '__main__':
     N = int(raw_input("Enter the size of grid in N: "))
     check_valid(N)
 
-    c = CONSTRAINT(N)
+    c = CONSTRAINT(N, sys.argv[0])
 
     inp = raw_input("Want to interpret results?")
     if inp == "yes":

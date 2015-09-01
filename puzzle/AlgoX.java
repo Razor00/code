@@ -49,6 +49,7 @@ public class AlgoX {
     private boolean[] satisfiedC;
     private NODE root;
     private NODE[] cols;
+    private boolean solvable;
     Stack<Integer> sols;// = new Stack<>();
     private static class DATA {
         private int r, c, v;
@@ -125,6 +126,7 @@ public class AlgoX {
     public AlgoX(LinkedList<DATA>[] list, int possibilities, int constraints, 
                         int priConstraints, int[] partialSols, int partialN)
     {
+        solvable = true;
         
         maxP = possibilities;
         maxC = constraints;
@@ -191,6 +193,11 @@ public class AlgoX {
         for (int i = 0; i < partialN; i++) {
             n = trows[i]; 
             sols.push(n.row);
+            if (n.top.bottom != n) { // the corresponding column has been removed by previous
+                solvable = false;  // row solution, which means voilation of constraints
+                //StdOut.println("Unsolvable");
+                break;
+            }
             processRow(n, null);
         }
     }
@@ -200,7 +207,7 @@ public class AlgoX {
     //  otherwise carry on with work
     public int minColumn()
     {
-        int min = maxP;
+        int min = maxP+1;
         int minIndex = 0;
         for (NODE c = root.right; c != root; c = c.right) {
             if (!satisfiedC[c.col]) {
@@ -311,7 +318,6 @@ public class AlgoX {
 
     public void printSolution(Stack<Integer> q)
     {
-        //StdOut.println("found solution");
         for (int i:q) 
             StdOut.print(i + " ");
         StdOut.println();
@@ -392,43 +398,16 @@ public class AlgoX {
             assert(st.isEmpty() == true);
         }
     }
-/*
-    public void solve(Stack<Integer> q)
-    {
-        for (NODE c = root.right; c != root; c = c.right) {
-            if (!satisfiedC[c.col]) {
-                if (c.count == 0) // Unfeasible solution
-                    return;
-
-                assert(c.count > 0); 
-
-                for (NODE h = c.bottom; h != c; h = h.bottom) {
-
-                    if (isRootNode(h)) 
-                        continue;
-
-                    Stack<NODE> st = new Stack<>();
-                    q.push(h.row);
-                    processRow(h, st);
-
-                    solve(q);
-
-                    restore(st);
-                    q.pop();
-                    assert(st.isEmpty() == true);
-                }
-            }
-        }
-        if (isSolved())
-            printSolution(q);
-    }
-*/
 
     public Stack<Integer> solve()
     {
-        //Stack<Integer> q = new Stack<>();
-        solve(sols);
-        return sols;
+        if (solvable) {
+            solve(sols);
+            return sols;
+        }
+        else {
+            return null;
+        }
     }
 
     public static void main(String[] args)
@@ -438,22 +417,19 @@ public class AlgoX {
         String[] q = in.readLine().split("\\s+"); //StdIn.readLine().split("\\s+");
         int possibilities       = Integer.parseInt(q[0]); // total possibilities
         int constraints         = Integer.parseInt(q[1]); // primary constraints
-        int priConstraints  = Integer.parseInt(q[2]); // total constraints
+        int priConstraints      = Integer.parseInt(q[2]); // total constraints
         int partialN            = Integer.parseInt(q[3]); 
 
         if (priConstraints > constraints) {
             StdOut.println("primary constraints greater than total constraints");
             return;
         }
-        //StdOut.println("possibilites        = " + possibilities);
-        //StdOut.println("constraints         = " + constraints);
-        //StdOut.println("primary constraints = " + primary_constraints);
 
         LinkedList<DATA>[] list = new LinkedList[possibilities+1];
 
         for (int i = 1; i <= possibilities; i++) {
             list[i] = new LinkedList<DATA>();
-            for (String s:in.readLine().split("\\s+")) { //StdIn.readLine().split("\\s+")) {
+            for (String s:in.readLine().split("\\s+")) { 
                 list[i].addFirst(new DATA(i, Integer.parseInt(s), 1));
             }
         }
@@ -464,7 +440,6 @@ public class AlgoX {
                 partialSols[i] = Integer.parseInt(s);
         }
         AlgoX al = new AlgoX(list, possibilities, constraints, priConstraints, partialSols, partialN);
-        //al.print();
         al.solve();
     }
 }

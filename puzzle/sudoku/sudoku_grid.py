@@ -15,7 +15,16 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
             p += 1
         return p
 
-    def fetchData(self, lbl):
+    def cleardata(self):
+        for i in range(self.N):
+            for j in range(self.N):
+                edt = self.layout.itemAt(i, j).graphicsItem().widget()
+                edt.setText("")
+        self.inp = None
+        self.result = None
+         
+
+    def fetchdata(self, lbl):
         inp = []
         lbl.setText("")
         for i in range(self.N):
@@ -36,7 +45,7 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
                 if not (v >= 0 and v <=  N):
                     lbl.setStyleSheet("color: rgb(255, 0, 0);")
                     outmsg = "Invalid Value at " + "(" + str(i+1) + "," \
-                            + str(j+1) + ") " + txt + ": Only 0 to " + str(N) + "are allowed"         
+                            + str(j+1) + ") " + txt + ": Only 0 to " + str(N) + " are allowed"         
                     lbl.setText(outmsg)
                     return None
                         
@@ -45,30 +54,55 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
                
         return inp
 
-    def fillData(self, inp, res):
+    def filldata(self, result, idx, lbl):
+        res = result[idx]
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setPointSize(12)
+        lbl.setFont(font)
+        lbl.setStyleSheet("color : black")
+        lbl.setText("Solutions " + "(" + str(len(result)) + ")" + ":" + str(idx+1))
+        print(res)
         k = 0
         for i in range(self.N):
             for j in range(self.N):
                 edt = self.layout.itemAt(i, j).graphicsItem().widget()
-                if inp[k] == 0:
+                if self.inp[k] == 0:
                     edt.setStyleSheet("color: rgb(0, 102, 0);")
                 else:
                     edt.setStyleSheet("color: rgb(0, 0, 255);")
                 edt.setText(str(res[k]))
                 k += 1
 
+    def next(self, lbl):
+        if self.inp and self.result:
+            size = len(self.result)
+            if size > 0:
+                if self.res_idx != size:
+                    self.filldata(self.result, self.res_idx, lbl)
+                    self.res_idx += 1
+                else:
+                    lbl.setText("Reached last solution")
+        else:
+            lbl.setStyleSheet("color: rgb(255, 0, 0);")
+            lbl.setText("CANNOT BE SOLVED!!!")
+
+
     def solve(self, lbl):
-        inp = self.fetchData(lbl)
-        if inp == None:
+        self.inp = self.fetchdata(lbl)
+        if self.inp == None:
             return
 
-        c = CONSTRAINT(self.N)
-        res = execute_n_interpret(c, inp, False, True)
-        self.fillData(inp, res)
-        print res
+        c = CONSTRAINT(self.N, self.path)
+        self.result = execute_n_interpret(c, self.inp, False, True)
+        self.res_idx = 0
+        self.next(lbl)
 
-    def __init__(self, N):
+    def __init__(self, N, path):
         super(SUDOKU_GRID, self).__init__()
+        self.path = path
+        self.inp  = None
+        self.result = None
         self.N = N;
         self.bw = 40
         self.bh = 40
@@ -153,32 +187,47 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
         self.ensureVisible(0, 0, 800, 800)
 
 
-N = int(raw_input("Please enter the grid dimension: "))
+N = map(int, raw_input("Please enter the grid dimension: ").strip().split())[0]
+if N <= 0:
+    print ("Sudoku needs a positive grid number")
+    sys.exit(0)
+
 p = math.sqrt(N)
 if p * p != N:
-    print ("N is not a square")
+    print (str(N) + " is not a square")
     sys.exit(0)
 
 a = QApplication(sys.argv)
-grid = SUDOKU_GRID(N)
+grid = SUDOKU_GRID(N, sys.argv[0])
 main_layout   = QtGui.QVBoxLayout()
 top_layout    = QtGui.QHBoxLayout()
 middle_layout = QtGui.QHBoxLayout()
-bottom_layout = QtGui.QHBoxLayout()
+bottom_layout = QtGui.QGridLayout()
 
 status_lbl  = QtGui.QLabel()
 status_lbl.setAutoFillBackground(True)
 
-solve_btn = QtGui.QPushButton(text = "solve")
+solve_btn = QtGui.QPushButton(text = "Solve")
 solve_btn.clicked.connect(lambda: grid.solve(status_lbl))
 
-exit_btn = QtGui.QPushButton(text = "exit")
+next_btn  = QtGui.QPushButton(text = "Next")
+next_btn.clicked.connect(lambda: grid.next(status_lbl))
+
+clear_btn = QtGui.QPushButton(text = "Clear")
+clear_btn.clicked.connect(grid.cleardata)
+
+exit_btn = QtGui.QPushButton(text = "Exit")
 exit_btn.clicked.connect(sys.exit)
+
+
 
 top_layout.addWidget(grid)
 middle_layout.addWidget(status_lbl)
-bottom_layout.addWidget(solve_btn)
-bottom_layout.addWidget(exit_btn)
+bottom_layout.addWidget(solve_btn, 0, 0)
+bottom_layout.addWidget(next_btn, 0, 1)
+bottom_layout.addWidget(clear_btn, 1, 0)
+bottom_layout.addWidget(exit_btn, 1, 1)
+
 
 main_layout.addLayout(top_layout)
 main_layout.addLayout(middle_layout)
