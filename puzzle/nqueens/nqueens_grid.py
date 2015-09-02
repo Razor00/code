@@ -4,11 +4,13 @@ import math
 from PyQt4 import QtGui
 from PyQt4.QtGui import QWidget, QApplication
 
-from sudoku_constraint import CONSTRAINT, execute_n_interpret
+from nqueens_constraint import CONSTRAINT, execute_n_interpret
 
-class SUDOKU_GRID(QtGui.QGraphicsView):
+class NQUEENS_GRID(QtGui.QGraphicsView):
     @staticmethod
     def maxDigits(n):
+        return 1;
+
         p = 0
         while n:
             n = n/10
@@ -22,8 +24,7 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
                 edt.setText("")
         self.inp = None
         self.result = None
-        lbl.setText("")
-         
+        lbl.setText("") 
 
     def fetchdata(self, lbl):
         inp = []
@@ -32,27 +33,16 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
             for j in range(self.N):
                 edt = self.layout.itemAt(i, j).graphicsItem().widget()
                 txt = edt.text()
-                if txt == "":
-                    v = 0
-                else:
-                    try:
-                        v = int(txt)
-                    except ValueError:
-                        lbl.setStyleSheet("color: rgb(255, 0, 0);")
-                        outmsg = "Invalid Value at " + "(" + str(i+1) + "," + str(j+1) + "): " + txt
+                v = 0
+                if txt != "":
+                    if txt != 'Q':
+                        outmsg = "Invalid Value at " + "(" + str(i+1) + "," \
+                            + str(j+1) + ") " + txt + ": Only Q is Allowed"         
                         lbl.setText(outmsg)
                         return None
-
-                if not (v >= 0 and v <=  N):
-                    lbl.setStyleSheet("color: rgb(255, 0, 0);")
-                    outmsg = "Invalid Value at " + "(" + str(i+1) + "," \
-                            + str(j+1) + ") " + txt + ": Only 0 to " + str(N) + " are allowed"         
-                    lbl.setText(outmsg)
-                    return None
-                        
+                    else:
+                        v = 1
                 inp.append(v) 
-
-               
         return inp
 
     def filldata(self, result, idx, lbl):
@@ -72,7 +62,10 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
                     edt.setStyleSheet("color: rgb(0, 102, 0);")
                 else:
                     edt.setStyleSheet("color: rgb(0, 0, 255);")
-                edt.setText(str(res[k]))
+                if res[k] == 1:
+                    edt.setText("Q")
+                else:
+                    edt.setText("")
                 k += 1
 
     def next(self, lbl):
@@ -93,14 +86,16 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
         self.inp = self.fetchdata(lbl)
         if self.inp == None:
             return
-
+        
+        print (self.inp)
         c = CONSTRAINT(self.N, self.path)
         self.result = execute_n_interpret(c, self.inp, False, True)
+        print(self.result)
         self.res_idx = 0
         self.next(lbl)
 
     def __init__(self, N, path):
-        super(SUDOKU_GRID, self).__init__()
+        super(NQUEENS_GRID, self).__init__()
         self.path = path
         self.inp  = None
         self.result = None
@@ -119,7 +114,7 @@ class SUDOKU_GRID(QtGui.QGraphicsView):
         self.setTransformationAnchor(QtGui.QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QtGui.QGraphicsView.AnchorViewCenter)
 
-        self.max = SUDOKU_GRID.maxDigits(self.N)
+        self.max = NQUEENS_GRID.maxDigits(self.N)
         self.layout = QtGui.QGraphicsGridLayout()
         self.layout.setHorizontalSpacing(self.hs)
         self.layout.setVerticalSpacing(self.vs)
@@ -200,21 +195,17 @@ while True:
     try:
         N = int(inp[0])
     except  ValueError:
-        print("Please enter a positive Integer square")
+        print("Please enter a positive Integer ")
         continue
 
     if N <= 0:
-        print ("Sudoku needs a positive Integer Square number")
+        print ("Please enter a positive Integer")
         continue
+    break
 
-    p = int(math.sqrt(N))
-    if p * p == N:
-        break
-    else:
-        print (str(N) + " is not a square")
 
 a = QApplication(sys.argv)
-grid = SUDOKU_GRID(N, sys.argv[0])
+grid = NQUEENS_GRID(N, sys.argv[0])
 main_layout   = QtGui.QVBoxLayout()
 top_layout    = QtGui.QHBoxLayout()
 middle_layout = QtGui.QHBoxLayout()
@@ -250,7 +241,7 @@ main_layout.addLayout(middle_layout)
 main_layout.addLayout(bottom_layout)
 
 w = QWidget()
-w.setWindowTitle("Sudoku " + str(N) + "x" + str(N))
+w.setWindowTitle("NQueens " + str(N) + "x" + str(N))
 w.setLayout(main_layout)
 w.show()
 sys.exit(a.exec_())
