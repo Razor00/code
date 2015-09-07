@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import math as math
+import time as time
+from decimal import Decimal
 """
     def reverse_bit(v):
         BitReverseTable256 = [0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0, 0x10, 0x90, 0x50, 0xD0, 0x30, 0xB0, 0x70, 0xF0,
@@ -125,12 +127,13 @@ class FFT:
         #print FB
         m = [FA[i]*FB[i] for i in range(len(FA))]
         m = FFT.IFFT(m)
-        print m
+        #print m
         first = len(m) - 2 #last term is useless, lsb in msb of the  list
-        prod = 0
+        prod = 0L #Decimal(0)
         for v in m[:-1][::-1]:
-            #print v.real
-            prod = prod * 10 + v.real
+            prod = prod * 10
+            if math.fabs(v.real) > 1e-9:
+                prod = prod + int(round(v.real))
         return prod
 
 if __name__ == '__main__':
@@ -144,9 +147,26 @@ if __name__ == '__main__':
         M = np.exp(-2j * np.pi * k * n / N)
         return np.dot(M, x)
 
-    a1 = map(float, raw_input("Please enter the data: ").strip().split())
-    a2 = map(float, raw_input("Please enter the data: ").strip().split())
-    print FFT.multiply(a1, a2)
+    #a1 = map(float, raw_input("Please enter the data: ").strip().split())
+    #a2 = map(float, raw_input("Please enter the data: ").strip().split())
+    inp1 = raw_input().strip().split()
+    a1 = map(float, inp1)
+    inp2 = raw_input().strip().split()
+    a2 = map(float, inp2)
+
+    inp1 = "".join(inp1)
+    inp2 = "".join(inp2)
+
+    st = time.time()
+    fout = FFT.multiply(a1, a2)
+    end1 = time.time()
+
+    dout = int(inp1)*int(inp2)
+    end2 = time.time()
+    assert(fout == dout)
+    print "fft = ", end1 - st
+    print "normal = ", end2 - end1
+
 """
     arr = map(float, raw_input("Please enter the data: ").strip().split())
     print  "forward fft"
